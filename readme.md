@@ -6,6 +6,11 @@ Robo-chess is a Python library for playing chess in real-time. While other chess
 
 The library is broken down into three main sections: vision -physical chess board and pieces are decomposed into a virtual board state and localided in the world-, strategy -optimal move is decided-, and motor primitives -robot trajectory is composed and executed-. As you can see the board state is not updated solely from the robots perception of the board therefore mistakes or miss-moves must be check for and fixed using the same process.
 
+pgn data was gernered from:
+http://www.pgnmentor.com/files.html#players &
+https://chessproblem.my-free-games.com/chess/games/Download-PGN.php
+
+
 ## Vision
 The vision subsection has three main components:
 1. Percieve the physical board and pieces and render a board state.
