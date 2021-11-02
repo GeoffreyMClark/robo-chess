@@ -1,3 +1,9 @@
+# To do:
+#  1. add random move functionality
+#  2. add move camera function
+#  3. add randomization of lighting conditions function
+
+
 import numpy as np
 import pybullet as pb
 import pybullet_data
@@ -34,10 +40,12 @@ def addChessboard():
     # Set friction for the chess board to a reasonable level so it does not go spinning away in the simulator
     pb.changeDynamics(multiBodyId,-1,linearDamping=100, angularDamping=100, rollingFriction=200, spinningFriction=200)
 
+def positionConversion(square):
+    return [(square[1]*.05)-.175,(square[0]*.0514)-.18,0.05]
 
 def addPieces(color, piece, square):
     # position conversion
-    position=[(square[1]*.05)-.175,(square[0]*.0514)-.18,0.05]
+    position=positionConversion(square)
     color_dict={'B':[.3,.3,.3,1],'W':[.9,.9,.9,1]}
     C=color_dict[color]
     # Create visual shape for piece
@@ -53,6 +61,19 @@ def addPieces(color, piece, square):
         baseOrientation=pb.getQuaternionFromEuler([np.pi/2,0,rotation]))
     pb.changeDynamics(multiBodyId,-1, rollingFriction=200, spinningFriction=200)
     return multiBodyId
+
+def movePiece(piece_id, new_square):
+    # position conversion
+    position=positionConversion(new_square)
+    rotation = np.random.uniform(0, 2*np.pi)
+    orientation = pb.getQuaternionFromEuler([np.pi/2,0,rotation])
+    multiBodyId = pb.resetBasePositionAndOrientation(int(piece_id), position, orientation)
+
+def moveCamera():
+    pass
+
+def changeLighting():
+    pass
 
 
 class BoardState:
@@ -76,13 +97,20 @@ class BoardState:
                 if piece != '':
                     p = piece.decode('ascii')
                     self.state_ids[j,i] = addPieces(p[0],p[1],[j,i])
-                    print(self.state_ids[j,i])
-                    print(self.state_ids)
-        # [[addPieces(piece[0],piece[1],[j,i]) for i, piece in enumerate(self.state[j,:])] for j in range(8)]
 
     def randomMove(self):
-        pass
-
+        # select random piece
+        all_pieces = self.state_ids[self.state_ids!=0]
+        piece_id = np.random.choice(all_pieces)
+        old_location = np.where(self.state_ids==piece_id)
+        # select empty space
+        empty_locations = np.asarray(np.where(self.state_ids == 0))
+        location_select = np.random.randint(0,empty_locations[0].shape[0])
+        move_location = empty_locations[:, location_select]
+        # move piece to new position
+        movePiece(piece_id, move_location)
+        self.state_ids[old_location[0],old_location[1]] = 0
+        self.state_ids[move_location[0], move_location[1]] = piece_id
 
 
 
@@ -94,6 +122,8 @@ if __name__ == "__main__":
     while pb.isConnected():
         # pb.stepSimulation()
         count+=1
+        board.randomMove()
+        print(count)
 
 
 
