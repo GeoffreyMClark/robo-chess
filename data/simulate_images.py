@@ -89,8 +89,13 @@ def moveCameraRandom():
         fov=62.2, aspect=4/3, nearVal=0.01, farVal=20.0)
     return viewMatrix, projectionMatrix
 
-def changeLighting():
-    pass
+def changeLightingParams():
+    direction=[0,0,0]
+    color=[np.random.uniform(0,1), np.random.uniform(0,1), np.random.uniform(0,1)]
+    ambient=0.0
+    diffuse=0.0
+    specular=0.0
+    return direction, color, ambient, diffuse, specular
 
 
 class BoardState:
@@ -141,10 +146,18 @@ if __name__ == "__main__":
         count+=1
         board.randomMove()
         viewMatrix, projectionMatrix = moveCameraRandom()
+        dir, color, amb, dif, spec = changeLightingParams()
+
         width, height, rgbImg, depthImg, segImg = pb.getCameraImage(
             width=3280, height=2464,
             viewMatrix=viewMatrix,
             projectionMatrix=projectionMatrix,
+            lightDirection=dir,
+            lightColor=color,
+            shadow=0,
+            lightAmbientCoeff=amb,
+            lightDiffuseCoeff=dif,
+            lightSpecularCoeff=-1000.,
             renderer=pb.ER_BULLET_HARDWARE_OPENGL)
 
         pass
