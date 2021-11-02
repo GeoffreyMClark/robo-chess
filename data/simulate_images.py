@@ -1,7 +1,6 @@
 # To do:
-#  1. add random move functionality
-#  2. add move camera function
 #  3. add randomization of lighting conditions function
+#  4. check intrinsic camera setting to make sure they match the pycamera V2
 
 
 import numpy as np
@@ -9,6 +8,8 @@ import pybullet as pb
 import pybullet_data
 import time
 import pybullet_data
+
+
 
 def startSimulation():
     # Start physics environment
@@ -19,7 +20,6 @@ def startSimulation():
     # Set gravity and simulation time params
     pb.setGravity(0, 0, -9.8)
     # pb.setRealTimeSimulation(1)
-
 
 def addChessboard():
     # Create visual shape for chessboard
@@ -69,8 +69,25 @@ def movePiece(piece_id, new_square):
     orientation = pb.getQuaternionFromEuler([np.pi/2,0,rotation])
     multiBodyId = pb.resetBasePositionAndOrientation(int(piece_id), position, orientation)
 
-def moveCamera():
-    pass
+def moveCameraRandom():
+    theta = np.random.uniform(0, 2*np.pi) # camera angular position around the board
+    r = np.random.uniform(0.1, 1.0) # camera distance from center of board
+    phi = np.random.uniform(.1*np.pi, .4*np.pi) # camera angular position above the board
+    # theta = 3*np.pi/2
+    # r=0.5
+    # phi=.2*np.pi
+    
+    
+    camera_coordinates = [np.cos(phi)*np.sin(theta), np.cos(phi)*np.cos(theta), np.sin(phi)]
+    # camera_target = [np.random.uniform(-.1, .1), np.random.uniform(-.1, .1), np.random.uniform(-.1, .1)]
+    yaw=-(theta+np.pi)*180/np.pi
+    pitch=-phi*180/np.pi#-phi*180/np.pi
+    roll=0#180 if phi > np.pi/2 else 0
+    viewMatrix = pb.computeViewMatrixFromYawPitchRoll(
+        camera_coordinates, r, yaw, pitch, roll, 2)
+    projectionMatrix = pb.computeProjectionMatrixFOV(
+        fov=62.2, aspect=4/3, nearVal=0.01, farVal=20.0)
+    return viewMatrix, projectionMatrix
 
 def changeLighting():
     pass
@@ -99,7 +116,7 @@ class BoardState:
                     self.state_ids[j,i] = addPieces(p[0],p[1],[j,i])
 
     def randomMove(self):
-        # select random piece
+        # select random piece, camera_coordinates, yaw, pitch, roll
         all_pieces = self.state_ids[self.state_ids!=0]
         piece_id = np.random.choice(all_pieces)
         old_location = np.where(self.state_ids==piece_id)
@@ -123,8 +140,11 @@ if __name__ == "__main__":
         # pb.stepSimulation()
         count+=1
         board.randomMove()
-        print(count)
+        viewMatrix, projectionMatrix = moveCameraRandom()
+        width, height, rgbImg, depthImg, segImg = pb.getCameraImage(
+            width=3280, height=2464,
+            viewMatrix=viewMatrix,
+            projectionMatrix=projectionMatrix,
+            renderer=pb.ER_BULLET_HARDWARE_OPENGL)
 
-
-
-        pb.getCameraImage(320,200, renderer=pb.ER_BULLET_HARDWARE_OPENGL)
+        pass
