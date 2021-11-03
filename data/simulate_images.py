@@ -1,7 +1,6 @@
 # To do:
-#  3. add randomization of lighting conditions function
 #  4. check intrinsic camera setting to make sure they match the pycamera V2
-
+#  3. figure out why lighting conditions arent changing in getCameraImage
 
 import numpy as np
 import pybullet as pb
@@ -43,11 +42,15 @@ def addChessboard():
 def positionConversion(square):
     return [(square[1]*.05)-.175,(square[0]*.0514)-.18,0.05]
 
+def generate_piece_color(color):
+    color_dict={'B':[.3,.3,.3,1],'W':[.9,.9,.9,1]}
+    color_mod=np.concatenate((np.random.uniform(-.05,.05,3),np.array([0])),axis=0)
+    return color_dict[color]+color_mod
+
 def addPieces(color, piece, square):
     # position conversion
     position=positionConversion(square)
-    color_dict={'B':[.3,.3,.3,1],'W':[.9,.9,.9,1]}
-    C=color_dict[color]
+    C=generate_piece_color(color)
     # Create visual shape for piece
     visualShapeId = pb.createVisualShape(shapeType=pb.GEOM_MESH,fileName='Pieces/'+piece+'.obj',rgbaColor=C,specularColor=[.8,.8,.8],meshScale=[.001,.001,.001])
     collisionShapeId = pb.createCollisionShape(shapeType=pb.GEOM_MESH,fileName='Pieces/'+piece+'.obj',meshScale=[.001,.001,.001])
@@ -62,27 +65,23 @@ def addPieces(color, piece, square):
     pb.changeDynamics(multiBodyId,-1, rollingFriction=200, spinningFriction=200)
     return multiBodyId
 
-def movePiece(piece_id, new_square):
+def movePiece(piece_id, new_square, piece_type):
+    C = generate_piece_color(piece_type[0][0])
     # position conversion
     position=positionConversion(new_square)
     rotation = np.random.uniform(0, 2*np.pi)
     orientation = pb.getQuaternionFromEuler([np.pi/2,0,rotation])
+    pb.changeVisualShape(int(piece_id), -1, rgbaColor=C)
     multiBodyId = pb.resetBasePositionAndOrientation(int(piece_id), position, orientation)
 
 def moveCameraRandom():
     theta = np.random.uniform(0, 2*np.pi) # camera angular position around the board
-    r = np.random.uniform(0.1, 1.0) # camera distance from center of board
+    r = np.random.uniform(0.2, .8) # camera distance from center of board
     phi = np.random.uniform(.1*np.pi, .4*np.pi) # camera angular position above the board
-    # theta = 3*np.pi/2
-    # r=0.5
-    # phi=.2*np.pi
-    
-    
-    camera_coordinates = [np.cos(phi)*np.sin(theta), np.cos(phi)*np.cos(theta), np.sin(phi)]
-    # camera_target = [np.random.uniform(-.1, .1), np.random.uniform(-.1, .1), np.random.uniform(-.1, .1)]
-    yaw=-(theta+np.pi)*180/np.pi
-    pitch=-phi*180/np.pi#-phi*180/np.pi
-    roll=0#180 if phi > np.pi/2 else 0
+    camera_coordinates = [r*np.cos(phi)*np.sin(theta), r*np.cos(phi)*np.cos(theta), r*np.sin(phi)]
+    yaw=-(theta+np.pi)*180/np.pi+np.random.uniform(-25,25)
+    pitch=-phi*180/np.pi+np.random.uniform(-20,20)
+    roll=0
     viewMatrix = pb.computeViewMatrixFromYawPitchRoll(
         camera_coordinates, r, yaw, pitch, roll, 2)
     projectionMatrix = pb.computeProjectionMatrixFOV(
@@ -104,7 +103,7 @@ class BoardState:
         self.stateToPieces()
 
     def initializeState(self):
-        state = np.chararray([8,8], itemsize=2)
+        state = np.chararray([8,8], itemsize=2, unicode=True)
         state_ids = np.zeros([8,8])
         state[:] = ''
         state[0,0:8] = np.array(['WR','WN','WB','WQ','WK','WB','WN','WR'])
@@ -115,9 +114,9 @@ class BoardState:
         
     def stateToPieces(self):
         for j in range(8):
-            for i, piece in enumerate(self.state[j,:]):
-                if piece != '':
-                    p = piece.decode('ascii')
+            for i, p in enumerate(self.state[j,:]):
+                if p != '':
+                    # p = piece.decode('ascii')
                     self.state_ids[j,i] = addPieces(p[0],p[1],[j,i])
 
     def randomMove(self):
@@ -130,10 +129,11 @@ class BoardState:
         location_select = np.random.randint(0,empty_locations[0].shape[0])
         move_location = empty_locations[:, location_select]
         # move piece to new position
-        movePiece(piece_id, move_location)
+        movePiece(piece_id, move_location, self.state[old_location[0],old_location[1]])
         self.state_ids[old_location[0],old_location[1]] = 0
         self.state_ids[move_location[0], move_location[1]] = piece_id
-
+        self.state[move_location[0], move_location[1]] = self.state[old_location[0],old_location[1]][0]
+        self.state[old_location[0],old_location[1]]=''
 
 
 if __name__ == "__main__":
@@ -146,18 +146,18 @@ if __name__ == "__main__":
         count+=1
         board.randomMove()
         viewMatrix, projectionMatrix = moveCameraRandom()
-        dir, color, amb, dif, spec = changeLightingParams()
+        # dir, color, amb, dif, spec = changeLightingParams()
 
         width, height, rgbImg, depthImg, segImg = pb.getCameraImage(
             width=3280, height=2464,
             viewMatrix=viewMatrix,
             projectionMatrix=projectionMatrix,
-            lightDirection=dir,
-            lightColor=color,
-            shadow=0,
-            lightAmbientCoeff=amb,
-            lightDiffuseCoeff=dif,
-            lightSpecularCoeff=-1000.,
+            # lightDirection=dir,
+            # lightColor=color,
+            # shadow=0,
+            # lightAmbientCoeff=amb,
+            # lightDiffuseCoeff=dif,
+            # lightSpecularCoeff=-1000.,
             renderer=pb.ER_BULLET_HARDWARE_OPENGL)
 
         pass
