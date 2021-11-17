@@ -11,7 +11,7 @@ The data generation module has two main functions:
 1. To create randomized camera images of a chess board with accompanying lable.
 2. To generate motions where the robot makes moves with virtual pieces.
 
-Generalized visual data is created by randomizing the location and distance of the camera from the board as well as the location of the board in the camera frame. To ensure my data is as robust as possible the color of each piece and global lighting conditions are slightly changed for each image as well. Adding these modifications to the data collection is intended to make the sim-to-real transfer easier.
+Generalized visual data is created by randomizing the location and distance of the camera from the board as well as the location of the board in the camera frame. To ensure my data is as robust as possible the color of each piece and global lighting conditions are slightly changed for each image as well. Adding these modifications to the data collection is intended to make the sim-to-real transfer easier. To generate visual data run [simulate_images.py](data/simulate_images.py), which starts the pybullet environment and iteratively moves pieces around the board while taking pictures of the resulting board. Data is stored in the [data/images](data/images) folder.
 
 ## Vision
 The vision subsection has three main components:
