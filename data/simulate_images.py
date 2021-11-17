@@ -159,5 +159,4 @@ if __name__ == "__main__":
             # lightDiffuseCoeff=dif,
             # lightSpecularCoeff=-1000.,
             renderer=pb.ER_BULLET_HARDWARE_OPENGL)
-
         pass
